@@ -16,7 +16,7 @@ module EventMachine
     @n = 0 if (@n+=1) >= connection_pool.size
 
     #connection.execute(query, type, cblk, eblk, &blk)
-    
+
     df = EventMachine::DefaultDeferrable.new
     cb = blk || Proc.new { |r| df.succeed(r) }
     eb = Proc.new { |r| df.fail(r) }
@@ -24,11 +24,11 @@ module EventMachine
     df
   end
   #class << self
-  #  alias query execute 
+  #  alias query execute
   #end
   def self.connection_pool
     @connection_pool ||= (1..settings[:connections]).map{ EventMachine::PostgresConnection.connect(settings) }
-    
+
   end
 end
 end
@@ -44,7 +44,7 @@ module EventMachine
 
     def initialize(opts)
       unless EM.respond_to?(:watch) and PGconn.method_defined?(:socket)
-        
+
         raise RuntimeError, 'pg and EM.watch are required for EventedPostgres'
       end
 
@@ -60,7 +60,7 @@ module EventMachine
       df = EventMachine::DefaultDeferrable.new
       cb = blk || Proc.new { |r| df.succeed(r) }
       eb = Proc.new { |r| df.fail(r) }
-      
+
       @connection.execute(sql,params,cb,eb)
       df
     end
@@ -69,6 +69,10 @@ module EventMachine
     # behave as a normal postgres connection
     def method_missing(method, *args, &blk)
       @connection.send(method, *args)
+    end
+
+    def wait_for_notify(*timeout, &blk)
+      @connection.wait_for_notify(*timeout, &blk)
     end
 
     def connect(opts)
@@ -103,9 +107,9 @@ module EventMachine
           conn.async_exec("set client_encoding to '#{encoding}'")
         end
       end
-      
+
       #conn.options(Mysql::OPT_LOCAL_INFILE, 'client')
- 
+
       # increase timeout so mysql server doesn't disconnect us
       # this is especially bad if we're disconnected while EM.attach is
       # still in progress, because by the time it gets to EM, the FD is
